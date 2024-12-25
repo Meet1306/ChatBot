@@ -27,6 +27,8 @@ function handlePageChange() {
   const newPath = window.location.pathname;
 
   if (newPath !== currentPath) {
+    console.log("Page changed");
+    
     currentPath = newPath;
     const chatbox = document.getElementById("AiChatbox");
     if (chatbox) {
@@ -54,6 +56,8 @@ function handlePageChange() {
       });
     }
     fetchApiKey();
+    // console.log(GEMINI_API_KEY);
+    
   }
 }
 
@@ -157,8 +161,6 @@ function addAiChatBox() {
   });
 
   document.getElementById("sendChat").addEventListener("click", () => {
-    console.log(GEMINI_API_KEY);
-
     handleSendMessages();
   });
 }
