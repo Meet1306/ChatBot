@@ -7,18 +7,25 @@ function handlePageChange() {
     currentPath = newPath;
 
     const chatbox = document.getElementById("AiChatbox");
-    console.log("Path Changed\n", chatbox);
+    // console.log("Path Changed\n", chatbox);
 
     if (chatbox) {
       chatbox.remove();
     }
 
-    if (currentPath.includes("/problems/")) {
+    if (
+      currentPath.includes("/problems/") &&
+      currentPath.length > "/problems/".length
+    ) {
+      console.log("Problems Page");
+
       const buttonExists = document.querySelector("#AiHelpButton");
 
-      if (!buttonExists) {
-        addAiHelpButton();
-      }
+      setTimeout(() => {
+        if (!buttonExists) {
+          addAiHelpButton();
+        }
+      }, 500);
     }
   } else {
     const buttonExists = document.querySelector("#AiHelpButton");
@@ -35,8 +42,8 @@ setInterval(handlePageChange, 50);
 
 function addAiHelpButton() {
   const adjEl = document.getElementsByClassName(
-    "d-flex flex-row rounded-3 dmsans align-items-center coding_list__V_ZOZ coding_card_mod_unactive__O_IEq"
-  )[0];
+    "coding_nav_bg__HRkIn p-2 nav nav-pills w-100"
+  )[0].firstElementChild;
 
   const newListItem = document.createElement("li");
   newListItem.className =
@@ -71,8 +78,9 @@ function addAiHelpButton() {
 
   newListItem.appendChild(aiIcon);
   newListItem.innerHTML += `AI`;
+  console.log(adjEl);
 
-  adjEl.insertAdjacentElement("afterend", newListItem);
+  adjEl.insertAdjacentElement("beforeend", newListItem);
 
   //   checkAndAddChatBot();
 }
