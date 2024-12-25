@@ -5,6 +5,7 @@
   "author": "Meet Patel",
   "description": "Develop a Chrome extension that integrates AI functionality into the Algozenith platform.",
   "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://api.gemini.com/*"],
   "content_scripts": [
     {
       "matches": ["https://maang.in/*"],

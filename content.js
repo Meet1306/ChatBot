@@ -5,10 +5,7 @@ function handlePageChange() {
 
   if (newPath !== currentPath) {
     currentPath = newPath;
-
     const chatbox = document.getElementById("AiChatbox");
-    // console.log("Path Changed\n", chatbox);
-
     if (chatbox) {
       chatbox.remove();
     }
@@ -17,8 +14,7 @@ function handlePageChange() {
       currentPath.includes("/problems/") &&
       currentPath.length > "/problems/".length
     ) {
-      console.log("Problems Page");
-
+      // console.log("Problems Page");
       const buttonExists = document.querySelector("#AiHelpButton");
 
       setTimeout(() => {
@@ -50,6 +46,8 @@ function addAiHelpButton() {
     "d-flex flex-row rounded-3 dmsans align-items-center coding_list__V__ZOZ";
   newListItem.style.padding = "0.36rem 1rem";
   newListItem.style.cursor = "pointer";
+  newListItem.style.fontFamily = "DM Sans, sans-serif";
+
   newListItem.id = "AiHelpButton";
 
   const aiIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -78,7 +76,7 @@ function addAiHelpButton() {
 
   newListItem.appendChild(aiIcon);
   newListItem.innerHTML += `AI`;
-  console.log(adjEl);
+  // console.log(adjEl);
 
   adjEl.insertAdjacentElement("beforeend", newListItem);
 
@@ -109,7 +107,7 @@ function addAiChatBox() {
   chatbox.style.overflow = "auto";
 
   chatbox.innerHTML = `
-    <div style="padding: 10px; background:#005c83; color: white; font-weight: bold; border-radius: 10px 10px 0 0; class: chatBoxHeading">
+    <div style="padding: 10px; background: #005c83; color: white; font-weight: bold; border-radius: 10px 10px 0 0; class: chatBoxHeading">
       AI Chatbox
       <span style="float: right; cursor: pointer;" id="closeChatbox">X</span>
     </div>
@@ -125,17 +123,82 @@ function addAiChatBox() {
   document.body.appendChild(chatbox);
 
   document.getElementById("closeChatbox").addEventListener("click", () => {
-    chatbox.remove();
+    chatbox.style.display = "none";
   });
 
   document.getElementById("sendChat").addEventListener("click", () => {
-    const chatInput = document.getElementById("chatInput");
-    const chatMessages = document.getElementById("chatMessages");
-    if (chatInput.value.trim()) {
-      const message = document.createElement("div");
-      message.textContent = chatInput.value;
-      chatMessages.appendChild(message);
-      chatInput.value = "";
-    }
+    handleSendMessages();
   });
+}
+
+const GEMINI_API_KEY = "AIzaSyDzdLUORvkPmhuBSYGnWrG22-XbRLnJyGQ";
+
+async function handleSendMessages() {
+  const chatInput = document.getElementById("chatInput");
+  const chatMessages = document.getElementById("chatMessages");
+
+  if (chatInput.value.trim()) {
+    // Display user message
+    const userMessage = document.createElement("div");
+    userMessage.textContent = `You: ${chatInput.value}`;
+    userMessage.style.margin = "5px 0";
+    userMessage.style.padding = "5px";
+    userMessage.style.backgroundColor = "#e8f0fe";
+    userMessage.style.borderRadius = "5px";
+    chatMessages.appendChild(userMessage);
+
+    const userInput = chatInput.value;
+    chatInput.value = "";
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [{ text: userInput }],
+              },
+            ],
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(response.status);
+
+        console.log(data);
+
+        const aiResponse = data.candidates[0].content.parts[0].text;
+
+        const aiMessage = document.createElement("div");
+        aiMessage.textContent = `AI: ${aiResponse}`;
+        aiMessage.style.margin = "5px 0";
+        aiMessage.style.padding = "5px";
+        aiMessage.style.backgroundColor = "#f1f8e9";
+        aiMessage.style.borderRadius = "5px";
+        chatMessages.appendChild(aiMessage);
+      } else {
+        throw new Error("Failed to fetch AI response.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+
+      // Display error message in chatbox
+      const errorMessage = document.createElement("div");
+      errorMessage.textContent = "AI: Sorry, something went wrong.";
+      errorMessage.style.margin = "5px 0";
+      errorMessage.style.padding = "5px";
+      errorMessage.style.backgroundColor = "#ffebee";
+      errorMessage.style.borderRadius = "5px";
+      chatMessages.appendChild(errorMessage);
+    }
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
 }
