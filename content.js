@@ -1,3 +1,26 @@
+let GEMINI_API_KEY = null;
+
+async function fetchApiKey() {
+  try {
+    GEMINI_API_KEY = await getApiKey();
+    return GEMINI_API_KEY;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+function getApiKey() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get("geminiApiKey", (data) => {
+      if (data.geminiApiKey) {
+        resolve(data.geminiApiKey);
+      } else {
+        reject("No API Key found");
+      }
+    });
+  });
+}
+
 let currentPath = "";
 
 function handlePageChange() {
@@ -14,7 +37,6 @@ function handlePageChange() {
       currentPath.includes("/problems/") &&
       currentPath.length > "/problems/".length
     ) {
-      // console.log("Problems Page");
       const buttonExists = document.querySelector("#AiHelpButton");
 
       setTimeout(() => {
@@ -31,6 +53,7 @@ function handlePageChange() {
         addAiChatBox();
       });
     }
+    fetchApiKey();
   }
 }
 
@@ -76,16 +99,24 @@ function addAiHelpButton() {
 
   newListItem.appendChild(aiIcon);
   newListItem.innerHTML += `AI`;
-  // console.log(adjEl);
 
   adjEl.insertAdjacentElement("beforeend", newListItem);
-
-  //   checkAndAddChatBot();
 }
 
 function addAiChatBox() {
+  const LineToRemove = document.getElementsByClassName(
+    "gutter gutter-vertical"
+  )[0];
+  LineToRemove.style.visibility = "hidden";
+
   let existingChatbox = document.getElementById("AiChatbox");
   if (existingChatbox) {
+    if (existingChatbox.style.display === "none") {
+      existingChatbox.style.display = "block";
+      existingChatbox.style.display = "flex";
+      existingChatbox.style.flexDirection = "column";
+      existingChatbox.style.overflow = "hidden";
+    }
     return;
   }
 
@@ -94,8 +125,8 @@ function addAiChatBox() {
   chatbox.style.position = "fixed";
   chatbox.style.bottom = "20px";
   chatbox.style.right = "20px";
-  chatbox.style.width = "300px";
-  chatbox.style.height = "400px";
+  chatbox.style.width = "350px";
+  chatbox.style.height = "450px";
   chatbox.style.backgroundColor = "white";
   chatbox.style.border = "1px solid rgba(0, 0, 0, 0.2)";
   chatbox.style.borderRadius = "10px";
@@ -103,8 +134,6 @@ function addAiChatBox() {
   chatbox.style.display = "flex";
   chatbox.style.flexDirection = "column";
   chatbox.style.overflow = "hidden";
-  chatbox.style.resize = "both";
-  chatbox.style.overflow = "auto";
 
   chatbox.innerHTML = `
     <div style="padding: 10px; background: #005c83; color: white; font-weight: bold; border-radius: 10px 10px 0 0; class: chatBoxHeading">
@@ -114,7 +143,7 @@ function addAiChatBox() {
     <div id="chatMessages" style="flex-grow: 1; overflow-y: auto; padding: 10px; background-color: #f4f4f4;"></div>
     <div style="padding: 10px; background: #005c83; border-top: 1px solid #ccc;">
       <div style="display: flex;">
-        <input type="text" id="chatInput" placeholder="Ask your Doubt" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
+        <input type="text" id="chatInput" placeholder="Ask your Doubt" style="flex: 1; padding: 5px; border: 1px solid #005c83; border-radius: 5px;">
         <button id="sendChat" style="margin-left: 5px; padding: 5px 10px; background: #4d5d6f; color: white; border: none; border-radius: 5px;">Send</button>
       </div>
     </div>
@@ -124,21 +153,21 @@ function addAiChatBox() {
 
   document.getElementById("closeChatbox").addEventListener("click", () => {
     chatbox.style.display = "none";
+    LineToRemove.style.visibility = "visible";
   });
 
   document.getElementById("sendChat").addEventListener("click", () => {
+    console.log(GEMINI_API_KEY);
+
     handleSendMessages();
   });
 }
-
-const GEMINI_API_KEY = "AIzaSyDzdLUORvkPmhuBSYGnWrG22-XbRLnJyGQ";
 
 async function handleSendMessages() {
   const chatInput = document.getElementById("chatInput");
   const chatMessages = document.getElementById("chatMessages");
 
   if (chatInput.value.trim()) {
-    // Display user message
     const userMessage = document.createElement("div");
     userMessage.textContent = `You: ${chatInput.value}`;
     userMessage.style.margin = "5px 0";
@@ -150,6 +179,16 @@ async function handleSendMessages() {
     const userInput = chatInput.value;
     chatInput.value = "";
 
+    if (!GEMINI_API_KEY) {
+      const errorMessage = document.createElement("div");
+      errorMessage.textContent = "AI: Please set API Key first.";
+      errorMessage.style.margin = "5px 0";
+      errorMessage.style.padding = "5px";
+      errorMessage.style.backgroundColor = "#ffebee";
+      errorMessage.style.borderRadius = "5px";
+      chatMessages.appendChild(errorMessage);
+      return;
+    }
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -187,11 +226,9 @@ async function handleSendMessages() {
         throw new Error("Failed to fetch AI response.");
       }
     } catch (error) {
-      console.error("Error:", error);
-
-      // Display error message in chatbox
       const errorMessage = document.createElement("div");
-      errorMessage.textContent = "AI: Sorry, something went wrong.";
+      errorMessage.textContent =
+        "AI: Sorry, something went wrong. Set the Correct API Key.";
       errorMessage.style.margin = "5px 0";
       errorMessage.style.padding = "5px";
       errorMessage.style.backgroundColor = "#ffebee";

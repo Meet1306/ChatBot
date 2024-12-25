@@ -1,9 +1,45 @@
-<!--
-   index.html
-   Author:
-   Author URI: https://
-   Author Github URI: https://www.github.com/
-   Project Repository URI: https://github.com/
-   Description: The main UI for your Chrome Extension
-   License: MIT
--->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gemini API Key</title>
+    <style>
+      body {
+        width: 300px;
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        width: 100%;
+        padding: 10px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Enter Gemini API Key</h3>
+    <input
+      type="text"
+      id="apiKeyInput"
+      placeholder="Enter your Gemini API key"
+    />
+    <button id="saveApiKey">Save API Key</button>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
