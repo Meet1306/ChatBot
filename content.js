@@ -1,67 +1,115 @@
+// async function fetchApiKey() {
+//   try {
+//     GEMINI_API_KEY = await getApiKey();
+//     return GEMINI_API_KEY;
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
+
+// function getApiKey() {
+//   return new Promise((resolve, reject) => {
+//     chrome.storage.local.get("geminiApiKey", (data) => {
+//       if (data.geminiApiKey) {
+//         resolve(data.geminiApiKey);
+//       } else {
+//         reject("No API Key found");
+//       }
+//     });
+//   });
+// }
+
+// let currentPath = "";
+
+// function handlePageChange() {
+//   const newPath = window.location.pathname;
+
+//   if (newPath !== currentPath) {
+//     console.log("Page changed");
+
+//     currentPath = newPath;
+//     const chatbox = document.getElementById("AiChatbox");
+//     if (chatbox) {
+//       chatbox.remove();
+//     }
+
+//     if (
+//       currentPath.includes("/problems/") &&
+//       currentPath.length > "/problems/".length
+//     ) {
+//       const buttonExists = document.querySelector("#AiHelpButton");
+
+//       setTimeout(() => {
+//         if (!buttonExists) {
+//           addAiHelpButton();
+//         }
+//       }, 500);
+//     }
+//   } else {
+//     const buttonExists = document.querySelector("#AiHelpButton");
+
+//     if (buttonExists) {
+//       buttonExists.addEventListener("click", () => {
+//         addAiChatBox();
+//       });
+//     }
+//     // fetchApiKey();
+//     // console.log(GEMINI_API_KEY);
+//   }
+// }
+
+// setInterval(handlePageChange, 50);
+
 let GEMINI_API_KEY = null;
 
-async function fetchApiKey() {
-  try {
-    GEMINI_API_KEY = await getApiKey();
-    return GEMINI_API_KEY;
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-function getApiKey() {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get("geminiApiKey", (data) => {
-      if (data.geminiApiKey) {
-        resolve(data.geminiApiKey);
-      } else {
-        reject("No API Key found");
-      }
-    });
-  });
-}
-
-let currentPath = "";
-
-function handlePageChange() {
-  const newPath = window.location.pathname;
-
-  if (newPath !== currentPath) {
-    console.log("Page changed");
-    
-    currentPath = newPath;
-    const chatbox = document.getElementById("AiChatbox");
-    if (chatbox) {
-      chatbox.remove();
-    }
-
-    if (
-      currentPath.includes("/problems/") &&
-      currentPath.length > "/problems/".length
-    ) {
-      const buttonExists = document.querySelector("#AiHelpButton");
-
-      setTimeout(() => {
-        if (!buttonExists) {
-          addAiHelpButton();
-        }
-      }, 500);
-    }
+chrome.storage.local.get("geminiApiKey", (result) => {
+  if (result.geminiApiKey) {
+    GEMINI_API_KEY = result.geminiApiKey;
+    console.log("Initial GEMINI_API_KEY:", GEMINI_API_KEY);
   } else {
-    const buttonExists = document.querySelector("#AiHelpButton");
+    console.log("No GEMINI_API_KEY found in chrome.storage.");
+  }
+});
 
-    if (buttonExists) {
-      buttonExists.addEventListener("click", () => {
-        addAiChatBox();
-      });
-    }
-    fetchApiKey();
-    // console.log(GEMINI_API_KEY);
-    
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  console.log(changes);
+
+  if (namespace === "local" && changes.geminiApiKey) {
+    GEMINI_API_KEY = changes.geminiApiKey.newValue;
+  }
+  console.log(GEMINI_API_KEY);
+});
+console.log(GEMINI_API_KEY);
+
+let currentUrl = "";
+
+function onUrlChange(newUrl) {
+  console.log("URL changed to:", newUrl);
+  const chatbox = document.getElementById("AiChatbox");
+  if (chatbox) {
+    chatbox.remove();
+  }
+
+  if (newUrl.includes("/problems/") && newUrl.length > "/problems/".length) {
+    const buttonExists = document.querySelector("#AiHelpButton");
+    console.log(buttonExists);
+    setTimeout(() => {
+      if (!buttonExists) {
+        addAiHelpButton();
+      }
+    }, 500);
   }
 }
 
-setInterval(handlePageChange, 50);
+const observer = new MutationObserver(() => {
+  const newUrl = window.location.href;
+  if (newUrl !== currentUrl) {
+    currentUrl = newUrl;
+    onUrlChange(newUrl);
+  }
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
 
 function addAiHelpButton() {
   const adjEl = document.getElementsByClassName(
@@ -105,6 +153,9 @@ function addAiHelpButton() {
   newListItem.innerHTML += `AI`;
 
   adjEl.insertAdjacentElement("beforeend", newListItem);
+  adjEl.addEventListener("click", () => {
+    addAiChatBox();
+  });
 }
 
 function addAiChatBox() {
@@ -180,17 +231,6 @@ async function handleSendMessages() {
 
     const userInput = chatInput.value;
     chatInput.value = "";
-
-    if (!GEMINI_API_KEY) {
-      const errorMessage = document.createElement("div");
-      errorMessage.textContent = "AI: Please set API Key first.";
-      errorMessage.style.margin = "5px 0";
-      errorMessage.style.padding = "5px";
-      errorMessage.style.backgroundColor = "#ffebee";
-      errorMessage.style.borderRadius = "5px";
-      chatMessages.appendChild(errorMessage);
-      return;
-    }
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
