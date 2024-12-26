@@ -1,65 +1,3 @@
-// async function fetchApiKey() {
-//   try {
-//     GEMINI_API_KEY = await getApiKey();
-//     return GEMINI_API_KEY;
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
-
-// function getApiKey() {
-//   return new Promise((resolve, reject) => {
-//     chrome.storage.local.get("geminiApiKey", (data) => {
-//       if (data.geminiApiKey) {
-//         resolve(data.geminiApiKey);
-//       } else {
-//         reject("No API Key found");
-//       }
-//     });
-//   });
-// }
-
-// let currentPath = "";
-
-// function handlePageChange() {
-//   const newPath = window.location.pathname;
-
-//   if (newPath !== currentPath) {
-//     console.log("Page changed");
-
-//     currentPath = newPath;
-//     const chatbox = document.getElementById("AiChatbox");
-//     if (chatbox) {
-//       chatbox.remove();
-//     }
-
-//     if (
-//       currentPath.includes("/problems/") &&
-//       currentPath.length > "/problems/".length
-//     ) {
-//       const buttonExists = document.querySelector("#AiHelpButton");
-
-//       setTimeout(() => {
-//         if (!buttonExists) {
-//           addAiHelpButton();
-//         }
-//       }, 500);
-//     }
-//   } else {
-//     const buttonExists = document.querySelector("#AiHelpButton");
-
-//     if (buttonExists) {
-//       buttonExists.addEventListener("click", () => {
-//         addAiChatBox();
-//       });
-//     }
-//     // fetchApiKey();
-//     // console.log(GEMINI_API_KEY);
-//   }
-// }
-
-// setInterval(handlePageChange, 50);
-
 let GEMINI_API_KEY = null;
 
 chrome.storage.local.get("geminiApiKey", (result) => {
@@ -86,6 +24,8 @@ let currentUrl = "";
 function onUrlChange(newUrl) {
   console.log("URL changed to:", newUrl);
   const chatbox = document.getElementById("AiChatbox");
+  // console.log("PathName: ", window.location.pathname);
+
   if (chatbox) {
     chatbox.remove();
   }
@@ -206,6 +146,9 @@ function addAiChatBox() {
 
   document.body.appendChild(chatbox);
 
+  let uniqueId = window.location.pathname.split("/")[2];
+  restorePrevChats(uniqueId);
+
   document.getElementById("closeChatbox").addEventListener("click", () => {
     chatbox.style.display = "none";
     LineToRemove.style.visibility = "visible";
@@ -230,6 +173,11 @@ async function handleSendMessages() {
     chatMessages.appendChild(userMessage);
 
     const userInput = chatInput.value;
+    let uniqueId = window.location.pathname.split("/")[2];
+    // append this userInput into the chrom storage using the uniqueId as the key
+
+    storeCurrentChats(uniqueId, `You: ${userInput}`);
+
     chatInput.value = "";
     try {
       const response = await fetch(
@@ -256,6 +204,8 @@ async function handleSendMessages() {
         console.log(data);
 
         const aiResponse = data.candidates[0].content.parts[0].text;
+        // append the aiResponse into the chrome storage using the uniqueId as the key
+        storeCurrentChats(uniqueId, `AI: ${aiResponse}`);
 
         const aiMessage = document.createElement("div");
         aiMessage.textContent = `AI: ${aiResponse}`;
@@ -280,4 +230,37 @@ async function handleSendMessages() {
 
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
+}
+
+function restorePrevChats(uniqueId) {
+  // fetch previous chats stored in the chrome storage using th ekey uniqueId and display in the chatMessages div
+  chrome.storage.local.get(uniqueId, (result) => {
+    console.log(result);
+    const chatMessages = document.getElementById("chatMessages");
+
+    if (result[uniqueId]) {
+      result[uniqueId].forEach((chat) => {
+        const chatMessage = document.createElement("div");
+        chatMessage.textContent = chat;
+        chatMessage.style.margin = "5px 0";
+        chatMessage.style.padding = "5px";
+        chatMessage.style.backgroundColor = chat.includes("AI:")
+          ? "#f1f8e9"
+          : "#e8f0fe";
+        chatMessage.style.borderRadius = "5px";
+        chatMessages.appendChild(chatMessage);
+      });
+    }
+  });
+}
+
+function storeCurrentChats(uniqueId, Input) {
+  chrome.storage.local.get(uniqueId, (result) => {
+    let chats = [];
+    if (result[uniqueId]) {
+      chats = result[uniqueId];
+    }
+    chats.push(Input);
+    chrome.storage.local.set({ [uniqueId]: chats });
+  });
 }
