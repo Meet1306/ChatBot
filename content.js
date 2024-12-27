@@ -162,7 +162,6 @@ function addAiChatBox() {
     handleSendMessages();
   });
 }
-
 async function handleSendMessages() {
   const chatInput = document.getElementById("chatInput");
   const chatMessages = document.getElementById("chatMessages");
@@ -202,19 +201,17 @@ async function handleSendMessages() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(response.status);
-
-        console.log(data);
 
         const aiResponse = data.candidates[0].content.parts[0].text;
         storeCurrentChats(uniqueId, `AI: ${aiResponse}`);
 
         const aiMessage = document.createElement("div");
-        aiMessage.textContent = `AI: ${aiResponse}`;
+        aiMessage.innerHTML = formatAIResponse(aiResponse);
         aiMessage.style.margin = "5px 0";
-        aiMessage.style.padding = "5px";
+        aiMessage.style.padding = "10px";
         aiMessage.style.backgroundColor = "#f1f8e9";
         aiMessage.style.borderRadius = "5px";
+        aiMessage.style.whiteSpace = "pre-wrap";
         chatMessages.appendChild(aiMessage);
       } else {
         throw new Error("Failed to fetch AI response.");
@@ -232,6 +229,17 @@ async function handleSendMessages() {
 
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
+}
+
+function formatAIResponse(response) {
+  if (response.includes("```")) {
+    const formatted = response.replace(
+      /```([^`]+)```/g,
+      "<pre><code>$1</code></pre>"
+    );
+    return formatted;
+  }
+  return response.replace(/\n/g, "<br>");
 }
 
 function restorePrevChats(uniqueId) {
