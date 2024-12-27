@@ -3,26 +3,20 @@ let GEMINI_API_KEY = null;
 chrome.storage.local.get("geminiApiKey", (result) => {
   if (result.geminiApiKey) {
     GEMINI_API_KEY = result.geminiApiKey;
-    console.log("Initial GEMINI_API_KEY:", GEMINI_API_KEY);
   } else {
     console.log("No GEMINI_API_KEY found in chrome.storage.");
   }
 });
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
-  console.log(changes);
-
   if (namespace === "local" && changes.geminiApiKey) {
     GEMINI_API_KEY = changes.geminiApiKey.newValue;
   }
-  console.log(GEMINI_API_KEY);
 });
-console.log(GEMINI_API_KEY);
 
 let currentUrl = "";
 
 function onUrlChange(newUrl) {
-  console.log("URL changed to:", newUrl);
   const chatbox = document.getElementById("AiChatbox");
   if (chatbox) {
     chatbox.remove();
@@ -35,7 +29,6 @@ function onUrlChange(newUrl) {
     if (LineToRemove) LineToRemove.style.visibility = "visible";
 
     const buttonExists = document.querySelector("#AiHelpButton");
-    console.log(buttonExists);
     setTimeout(() => {
       if (!buttonExists) {
         addAiHelpButton();
@@ -95,7 +88,7 @@ function addAiHelpButton() {
   newListItem.appendChild(aiIcon);
   newListItem.innerHTML += `AI`;
 
-  adjEl.insertAdjacentElement("beforeend", newListItem);
+  if (adjEl) adjEl.insertAdjacentElement("beforeend", newListItem);
 
   newListItem.addEventListener("click", () => {
     addAiChatBox();
@@ -106,7 +99,7 @@ function addAiChatBox() {
   const LineToRemove = document.getElementsByClassName(
     "gutter gutter-vertical"
   )[0];
-  LineToRemove.style.visibility = "hidden";
+  if (LineToRemove) LineToRemove.style.visibility = "hidden";
 
   let existingChatbox = document.getElementById("AiChatbox");
   if (existingChatbox) {
@@ -133,6 +126,8 @@ function addAiChatBox() {
   chatbox.style.display = "flex";
   chatbox.style.flexDirection = "column";
   chatbox.style.overflow = "hidden";
+  chatbox.style.resize = "both";
+  chatbox.style.overflow = "auto";
 
   chatbox.innerHTML = `
     <div style="padding: 10px; background: #005c83; color: white; font-weight: bold; border-radius: 10px 10px 0 0; class: chatBoxHeading">
@@ -163,59 +158,83 @@ function addAiChatBox() {
   });
 }
 async function handleSendMessages() {
+  const probDesc = fetchProblemDescription();
+
   const chatInput = document.getElementById("chatInput");
   const chatMessages = document.getElementById("chatMessages");
 
   if (chatInput.value.trim()) {
+    const userInput = chatInput.value;
+
     const userMessage = document.createElement("div");
-    userMessage.textContent = `You: ${chatInput.value}`;
+    userMessage.innerHTML = formatResponse(`You: ${userInput}`);
     userMessage.style.margin = "5px 0";
     userMessage.style.padding = "5px";
     userMessage.style.backgroundColor = "#e8f0fe";
     userMessage.style.borderRadius = "5px";
-    chatMessages.appendChild(userMessage);
+    userMessage.style.whiteSpace = "pre-wrap";
+    userMessage.style.border = "1px solid #ccc";
+    if (chatMessages) chatMessages.appendChild(userMessage);
 
     let uniqueId = window.location.pathname.split("/")[2];
-
-    const userInput = chatInput.value;
     storeCurrentChats(uniqueId, `You: ${userInput}`);
 
     chatInput.value = "";
+
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: userInput }],
-              },
-            ],
-          }),
+      chrome.storage.local.get([uniqueId], async (storedChats) => {
+        const previousChats = storedChats[uniqueId] || [];
+
+        let probDescStr =
+          "The problem description above is the only context you need to keep in memory. You must retain previous interactions so that the user doesn't have to repeat the context every time. Your responses should always revolve around the provided problem description. If the user asks questions unrelated to the problem statement, immediately inform them that their question is not relevant to the current problem and refrain from responding further on the unrelated topic.You should only respond to the user's queries based on the information from the problem description, and not refer to the entire context in your replies. Remember, the context above is for your memory and should not be repeated in your responses.Additionally, avoid starting your replies with phrases like \"Okay, I understand,\" as your answers should feel fresh and direct. You should act as though you're only processing the current user's input, while still keeping the relevant context in mind and you can reply to hello hi and other greetings but the user context should not go beyond the problems description. \n";
+
+        let str =
+          "These are the previous conversations. Retain them in your memory so that the user doesn't have to repeat the context each time, and ensure your responses reflect that you are aware of all prior interactions. Below, I'll provide the problem description.\n";
+
+        previousChats.push(`${str}`);
+        previousChats.push(`${probDesc}`);
+        previousChats.push(`${probDescStr}`);
+        previousChats.push(`${userInput}`);
+
+        const combinedContext = previousChats.join("\n");
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [{ text: combinedContext }],
+                },
+              ],
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+
+          const aiResponse = data.candidates[0].content.parts[0].text;
+
+          storeCurrentChats(uniqueId, `AI: ${aiResponse}`);
+
+          const aiMessage = document.createElement("div");
+          aiMessage.innerHTML = formatResponse(`AI: ${aiResponse}`);
+          aiMessage.style.margin = "5px 0";
+          aiMessage.style.padding = "10px";
+          aiMessage.style.backgroundColor = "#f1f8e9";
+          aiMessage.style.borderRadius = "5px";
+          aiMessage.style.whiteSpace = "pre-wrap";
+          aiMessage.style.border = "1px solid #ccc";
+          if (chatMessages) chatMessages.appendChild(aiMessage);
+        } else {
+          console.log("Failed to fetch AI response.");
         }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-
-        const aiResponse = data.candidates[0].content.parts[0].text;
-        storeCurrentChats(uniqueId, `AI: ${aiResponse}`);
-
-        const aiMessage = document.createElement("div");
-        aiMessage.innerHTML = formatAIResponse(aiResponse);
-        aiMessage.style.margin = "5px 0";
-        aiMessage.style.padding = "10px";
-        aiMessage.style.backgroundColor = "#f1f8e9";
-        aiMessage.style.borderRadius = "5px";
-        aiMessage.style.whiteSpace = "pre-wrap";
-        chatMessages.appendChild(aiMessage);
-      } else {
-        throw new Error("Failed to fetch AI response.");
-      }
+      });
     } catch (error) {
       const errorMessage = document.createElement("div");
       errorMessage.textContent =
@@ -224,22 +243,48 @@ async function handleSendMessages() {
       errorMessage.style.padding = "5px";
       errorMessage.style.backgroundColor = "#ffebee";
       errorMessage.style.borderRadius = "5px";
-      chatMessages.appendChild(errorMessage);
+      errorMessage.style.whiteSpace = "pre-wrap";
+      errorMessage.style.border = "1px solid #ccc";
+      if (chatMessages) chatMessages.appendChild(errorMessage);
     }
-
-    chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 }
 
-function formatAIResponse(response) {
+function fetchProblemDescription() {
+  const probDescEl = document.getElementsByClassName(
+    "py-4 px-3 coding_desc_container__gdB9M"
+  )[0];
+  if (!probDescEl)
+    return "You can fetch the problem description from the previous chats if any.";
+  const probDesc = probDescEl.children[1];
+  if (!probDesc)
+    return "You can fetch the problem description from the previous chats if any.";
+  const probDescText = probDesc.textContent.trim();
+  const probDescFormatted = formatProblemDescription(probDescText);
+  return probDescFormatted;
+}
+
+function formatProblemDescription(text) {
+  let cleanedText = text.replace(/\\n/g, "\n");
+  cleanedText = cleanedText.replace(/\\textbf{[^}]+}/g, ""); // Remove LaTeX commands like \textbf
+
+  cleanedText = cleanedText.replace(/\s+/g, " ").trim();
+
+  return cleanedText;
+}
+
+function formatResponse(response) {
+  let formatted = response;
   if (response.includes("```")) {
-    const formatted = response.replace(
+    formatted = formatted.replace(
       /```([^`]+)```/g,
       "<pre><code>$1</code></pre>"
     );
-    return formatted;
   }
-  return response.replace(/\n/g, "<br>");
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+  formatted = formatted.replace(/\n/g, "<br>");
+
+  return formatted;
 }
 
 function restorePrevChats(uniqueId) {
@@ -254,14 +299,17 @@ function restorePrevChats(uniqueId) {
 
       response.chats.forEach((chat) => {
         const chatMessage = document.createElement("div");
-        chatMessage.textContent = chat;
+        chatMessage.innerHTML = formatResponse(chat);
         chatMessage.style.margin = "5px 0";
         chatMessage.style.padding = "5px";
         chatMessage.style.backgroundColor = chat.includes("AI:")
           ? "#f1f8e9"
           : "#e8f0fe";
         chatMessage.style.borderRadius = "5px";
-        chatMessages.appendChild(chatMessage);
+        chatMessage.style.whiteSpace = "pre-wrap";
+        chatMessage.style.border = "1px solid #ccc";
+
+        if (chatMessages) chatMessages.appendChild(chatMessage);
       });
     } else {
       console.log("Failed to retrieve chats:", response.error);
