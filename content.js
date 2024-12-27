@@ -31,6 +31,11 @@ function onUrlChange(newUrl) {
   }
 
   if (newUrl.includes("/problems/") && newUrl.length > "/problems/".length) {
+    const LineToRemove = document.getElementsByClassName(
+      "gutter gutter-vertical"
+    )[0];
+    if (LineToRemove) LineToRemove.style.visibility = "visible";
+
     const buttonExists = document.querySelector("#AiHelpButton");
     console.log(buttonExists);
     setTimeout(() => {
@@ -58,7 +63,7 @@ function addAiHelpButton() {
 
   const newListItem = document.createElement("li");
   newListItem.className =
-    "d-flex flex-row rounded-3 dmsans align-items-center coding_list__V__ZOZ";
+    "d-flex flex-row rounded-3 dmsans align-items-center coding_list__V__ZOZ apnaAiButton";
   newListItem.style.padding = "0.36rem 1rem";
   newListItem.style.cursor = "pointer";
   newListItem.style.fontFamily = "DM Sans, sans-serif";
@@ -93,7 +98,8 @@ function addAiHelpButton() {
   newListItem.innerHTML += `AI`;
 
   adjEl.insertAdjacentElement("beforeend", newListItem);
-  adjEl.addEventListener("click", () => {
+
+  newListItem.addEventListener("click", () => {
     addAiChatBox();
   });
 }
@@ -172,10 +178,9 @@ async function handleSendMessages() {
     userMessage.style.borderRadius = "5px";
     chatMessages.appendChild(userMessage);
 
-    const userInput = chatInput.value;
     let uniqueId = window.location.pathname.split("/")[2];
-    // append this userInput into the chrom storage using the uniqueId as the key
 
+    const userInput = chatInput.value;
     storeCurrentChats(uniqueId, `You: ${userInput}`);
 
     chatInput.value = "";
@@ -204,7 +209,6 @@ async function handleSendMessages() {
         console.log(data);
 
         const aiResponse = data.candidates[0].content.parts[0].text;
-        // append the aiResponse into the chrome storage using the uniqueId as the key
         storeCurrentChats(uniqueId, `AI: ${aiResponse}`);
 
         const aiMessage = document.createElement("div");
@@ -233,7 +237,6 @@ async function handleSendMessages() {
 }
 
 function restorePrevChats(uniqueId) {
-  // fetch previous chats stored in the chrome storage using th ekey uniqueId and display in the chatMessages div
   chrome.storage.local.get(uniqueId, (result) => {
     console.log(result);
     const chatMessages = document.getElementById("chatMessages");
