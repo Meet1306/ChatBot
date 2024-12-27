@@ -24,8 +24,6 @@ let currentUrl = "";
 function onUrlChange(newUrl) {
   console.log("URL changed to:", newUrl);
   const chatbox = document.getElementById("AiChatbox");
-  // console.log("PathName: ", window.location.pathname);
-
   if (chatbox) {
     chatbox.remove();
   }
@@ -237,12 +235,16 @@ async function handleSendMessages() {
 }
 
 function restorePrevChats(uniqueId) {
-  chrome.storage.local.get(uniqueId, (result) => {
-    console.log(result);
-    const chatMessages = document.getElementById("chatMessages");
+  chrome.runtime.sendMessage({ type: "getChats", uniqueId }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.log("Error retrieving chats:", chrome.runtime.lastError.message);
+      return;
+    }
 
-    if (result[uniqueId]) {
-      result[uniqueId].forEach((chat) => {
+    if (response.success) {
+      const chatMessages = document.getElementById("chatMessages");
+
+      response.chats.forEach((chat) => {
         const chatMessage = document.createElement("div");
         chatMessage.textContent = chat;
         chatMessage.style.margin = "5px 0";
@@ -253,17 +255,24 @@ function restorePrevChats(uniqueId) {
         chatMessage.style.borderRadius = "5px";
         chatMessages.appendChild(chatMessage);
       });
+    } else {
+      console.log("Failed to retrieve chats:", response.error);
     }
   });
 }
 
-function storeCurrentChats(uniqueId, Input) {
-  chrome.storage.local.get(uniqueId, (result) => {
-    let chats = [];
-    if (result[uniqueId]) {
-      chats = result[uniqueId];
+function storeCurrentChats(uniqueId, input) {
+  chrome.runtime.sendMessage(
+    { type: "storeChat", uniqueId, chat: input },
+    (response) => {
+      if (chrome.runtime.lastError) {
+        console.log("Error storing chat:", chrome.runtime.lastError.message);
+        return;
+      }
+
+      if (!response.success) {
+        console.log("Failed to store chat:", response.error);
+      }
     }
-    chats.push(Input);
-    chrome.storage.local.set({ [uniqueId]: chats });
-  });
+  );
 }
