@@ -1,4 +1,5 @@
 let GEMINI_API_KEY = null;
+let hints = "";
 
 chrome.storage.local.get("geminiApiKey", (result) => {
   if (result.geminiApiKey) {
@@ -30,12 +31,50 @@ function onUrlChange(newUrl) {
 
     const buttonExists = document.querySelector("#AiHelpButton");
     setTimeout(() => {
+      hints = "";
+      fetchHints();
       if (!buttonExists) {
         addAiHelpButton();
       }
     }, 500);
   }
 }
+
+// function getCookie(name) {
+//   const value = `; ${document.cookie}`;
+//   const parts = value.split(`; ${name}=`);
+//   if (parts.length === 2) return parts.pop().split(";").shift();
+//   return null;
+// }
+
+// const accessToken = getCookie("access_token");
+// console.log(accessToken);
+
+// if (accessToken) {
+//   const apiUrl = "https://api2.maang.in/problems/user/1188";
+
+//   fetch(apiUrl, {
+//     method: "GET",
+//     headers: {
+//       Authorization: `Bearer ${accessToken}`,
+//       "Content-Type": "application/json",
+//     },
+//   })
+//     .then((response) => {
+//       if (!response.ok) {
+//         console.log("Authorization failed or invalid token");
+//       }
+//       return response.json();
+//     })
+//     .then((data) => {
+//       console.log("Problem Details and Hints: ", data);
+//     })
+//     .catch((error) => {
+//       console.log("Error:", error);
+//     });
+// } else {
+//   console.log("Access token not found in cookies");
+// }
 
 const observer = new MutationObserver(() => {
   const newUrl = window.location.href;
@@ -93,6 +132,95 @@ function addAiHelpButton() {
   newListItem.addEventListener("click", () => {
     addAiChatBox();
   });
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchHints() {
+  const loader = document.createElement("div");
+  loader.style.position = "fixed";
+  loader.style.top = "0";
+  loader.style.left = "0";
+  loader.style.width = "100%";
+  loader.style.height = "100%";
+  loader.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+  loader.style.zIndex = "9999";
+  loader.style.display = "flex";
+  loader.style.alignItems = "center";
+  loader.style.justifyContent = "center";
+  loader.style.flexDirection = "column";
+
+  const spinner = document.createElement("div");
+  spinner.style.border = "8px solid #f3f3f3";
+  spinner.style.borderTop = "8px solid #3498db";
+  spinner.style.borderRadius = "50%";
+  spinner.style.width = "50px";
+  spinner.style.height = "50px";
+  spinner.style.animation = "spin 1.5s linear infinite";
+
+  const text = document.createElement("p");
+  text.innerText = "Loading...";
+  text.style.color = "white";
+  text.style.fontSize = "20px";
+  text.style.marginTop = "20px";
+  text.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+
+  loader.appendChild(spinner);
+  loader.appendChild(text);
+
+  document.body.appendChild(loader);
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+    }
+    `;
+
+  await delay(1000);
+  document.head.appendChild(style);
+
+  const hintsTab = document.getElementsByClassName(
+    "coding_nav_bg__HRkIn p-2 nav nav-pills w-100"
+  )?.[0]?.firstElementChild?.children?.[1];
+  console.log("Hints Tab: ", hintsTab);
+
+  if (hintsTab) {
+    hintsTab.click();
+    await delay(1000);
+
+    // class= "coding_border__67f3C p-3 d-flex align-items-center justify-content-between gap-5"
+    const diffHints = document.getElementsByClassName(
+      "coding_border__67f3C p-3 d-flex align-items-center justify-content-between gap-5"
+    );
+
+    for (let i = 0; i < diffHints.length; i++) {
+      diffHints[i].click();
+      hints += diffHints[i].textContent + "\n";
+      await delay(1000);
+      const hintsEl = document.getElementsByClassName(
+        "fs-6 problem_paragraph mx-3"
+      )[0];
+      console.log(hintsEl);
+
+      hints += hintsEl.textContent + "\n";
+      diffHints[i].click();
+    }
+    console.log("Hints: ", hints);
+
+    const desc = document.getElementsByClassName(
+      "coding_nav_bg__HRkIn p-2 nav nav-pills w-100"
+    )[0].firstElementChild.children[0];
+
+    if (desc) {
+      desc.click();
+    }
+  }
+
+  document.body.removeChild(loader);
 }
 
 function addAiChatBox() {
@@ -157,6 +285,7 @@ function addAiChatBox() {
     handleSendMessages();
   });
 }
+
 async function handleSendMessages() {
   const probDesc = fetchProblemDescription();
 
@@ -185,15 +314,23 @@ async function handleSendMessages() {
       chrome.storage.local.get([uniqueId], async (storedChats) => {
         const previousChats = storedChats[uniqueId] || [];
 
-        let probDescStr =
-          "The problem description above is the only context you need to keep in memory. You must retain previous interactions so that the user doesn't have to repeat the context every time. Your responses should always revolve around the provided problem description. If the user asks questions unrelated to the problem statement, immediately inform them that their question is not relevant to the current problem and refrain from responding further on the unrelated topic.You should only respond to the user's queries based on the information from the problem description, and not refer to the entire context in your replies. Remember, the context above is for your memory and should not be repeated in your responses.Additionally, avoid starting your replies with phrases like \"Okay, I understand,\" as your answers should feel fresh and direct. You should act as though you're only processing the current user's input, while still keeping the relevant context in mind and you can reply to hello hi and other greetings but the user context should not go beyond the problems description. \n";
-
         let str =
           "These are the previous conversations. Retain them in your memory so that the user doesn't have to repeat the context each time, and ensure your responses reflect that you are aware of all prior interactions. Below, I'll provide the problem description.\n";
 
+        let probDescStr =
+          "The problem description above is the context you need to keep in memory for the problem related questions only\n";
+
+        let hintDesc =
+          "The above is the hints,solution approaches and codes which will help you to provide better solutions to the users queries. You can use it to help the user in solving the problem.\nYou must retain previous interactions so that the user doesn't have to repeat the context every time. Your responses should always revolve around the provided problem description. If the user asks questions unrelated to the problem statement, immediately inform them that their question is not relevant to the current problem and refrain from responding further on the unrelated topic.You should only respond to the user's queries based on the information from the problem description, and not ask for the entire context which was providede before in conversation history in your replies. Remember, the context above is for your memory and should not be repeated in your responses. Additionally, avoid starting your replies with phrases like \"Okay, I understand,\" as your answers should feel fresh and direct. You should act as though you're only processing the current user's input, while still keeping the relevant context in mind and you can reply to hello hi and other greetings but the user context should not go beyond the problems description. \n\n";
+
         previousChats.push(`${str}`);
+
         previousChats.push(`${probDesc}`);
         previousChats.push(`${probDescStr}`);
+
+        previousChats.push(`${hints}`);
+        previousChats.push(`${hintDesc}`);
+
         previousChats.push(`${userInput}`);
 
         const combinedContext = previousChats.join("\n");
