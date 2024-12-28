@@ -1,4 +1,5 @@
 let GEMINI_API_KEY = null;
+let currentUrl = "";
 let hints = "";
 
 chrome.storage.local.get("geminiApiKey", (result) => {
@@ -15,8 +16,6 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
   }
 });
 
-let currentUrl = "";
-
 function onUrlChange(newUrl) {
   const chatbox = document.getElementById("AiChatbox");
   if (chatbox) {
@@ -31,8 +30,6 @@ function onUrlChange(newUrl) {
 
     const buttonExists = document.querySelector("#AiHelpButton");
     setTimeout(() => {
-      hints = "";
-      fetchHints();
       if (!buttonExists) {
         addAiHelpButton();
       }
@@ -40,51 +37,97 @@ function onUrlChange(newUrl) {
   }
 }
 
-// function getCookie(name) {
-//   const value = `; ${document.cookie}`;
-//   const parts = value.split(`; ${name}=`);
-//   if (parts.length === 2) return parts.pop().split(";").shift();
-//   return null;
-// }
-
-// const accessToken = getCookie("access_token");
-// console.log(accessToken);
-
-// if (accessToken) {
-//   const apiUrl = "https://api2.maang.in/problems/user/1188";
-
-//   fetch(apiUrl, {
-//     method: "GET",
-//     headers: {
-//       Authorization: `Bearer ${accessToken}`,
-//       "Content-Type": "application/json",
-//     },
-//   })
-//     .then((response) => {
-//       if (!response.ok) {
-//         console.log("Authorization failed or invalid token");
-//       }
-//       return response.json();
-//     })
-//     .then((data) => {
-//       console.log("Problem Details and Hints: ", data);
-//     })
-//     .catch((error) => {
-//       console.log("Error:", error);
-//     });
-// } else {
-//   console.log("Access token not found in cookies");
-// }
-
 const observer = new MutationObserver(() => {
   const newUrl = window.location.href;
   if (newUrl !== currentUrl) {
     currentUrl = newUrl;
+    fetchProblemDetailsViaApi();
     onUrlChange(newUrl);
   }
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
+
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+  return null;
+}
+
+function getLastIdFromUrl(url) {
+  const match = url.match(/-(\d+)(?=\?)/);
+
+  return match ? match[1] : null;
+}
+
+let problemDetails = null;
+
+async function fetchProblemDetailsViaApi() {
+  let accessToken = getCookie("access_token");
+  console.log("Acess Token", accessToken);
+
+  if (!accessToken) {
+    console.log("Access token not found in cookies");
+    return null;
+  }
+
+  const ProbId = getLastIdFromUrl(window.location.href);
+
+  const apiUrl = `https://api2.maang.in/problems/user/${ProbId}`;
+
+  try {
+    let response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.log(response.status);
+
+      if (response.status === 401) {
+        console.log("Access token expired. Fetching a new token...");
+
+        accessToken = getCookie("access_token");
+
+        if (accessToken) {
+          console.log("Retrying the API call with the new access token...");
+
+          response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            console.log(
+              "Failed to fetch data even after refreshing the token."
+            );
+            return null;
+          }
+        } else {
+          console.log("Failed to refresh the access token.");
+          return null;
+        }
+      } else {
+        console.log("Authorization failed or invalid token.");
+        return null;
+      }
+    }
+
+    const data = await response.json();
+    console.log("Data:", data);
+    hints = fecthAllFromProblemDetails(data);
+    console.log("HInts", hints);
+  } catch (error) {
+    console.log("Error:", error);
+  }
+}
 
 function addAiHelpButton() {
   const adjEl = document.getElementsByClassName(
@@ -132,95 +175,6 @@ function addAiHelpButton() {
   newListItem.addEventListener("click", () => {
     addAiChatBox();
   });
-}
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function fetchHints() {
-  const loader = document.createElement("div");
-  loader.style.position = "fixed";
-  loader.style.top = "0";
-  loader.style.left = "0";
-  loader.style.width = "100%";
-  loader.style.height = "100%";
-  loader.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
-  loader.style.zIndex = "9999";
-  loader.style.display = "flex";
-  loader.style.alignItems = "center";
-  loader.style.justifyContent = "center";
-  loader.style.flexDirection = "column";
-
-  const spinner = document.createElement("div");
-  spinner.style.border = "8px solid #f3f3f3";
-  spinner.style.borderTop = "8px solid #3498db";
-  spinner.style.borderRadius = "50%";
-  spinner.style.width = "50px";
-  spinner.style.height = "50px";
-  spinner.style.animation = "spin 1.5s linear infinite";
-
-  const text = document.createElement("p");
-  text.innerText = "Loading...";
-  text.style.color = "white";
-  text.style.fontSize = "20px";
-  text.style.marginTop = "20px";
-  text.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-
-  loader.appendChild(spinner);
-  loader.appendChild(text);
-
-  document.body.appendChild(loader);
-
-  const style = document.createElement("style");
-  style.innerHTML = `
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-    }
-    `;
-
-  await delay(1000);
-  document.head.appendChild(style);
-
-  const hintsTab = document.getElementsByClassName(
-    "coding_nav_bg__HRkIn p-2 nav nav-pills w-100"
-  )?.[0]?.firstElementChild?.children?.[1];
-  console.log("Hints Tab: ", hintsTab);
-
-  if (hintsTab) {
-    hintsTab.click();
-    await delay(1000);
-
-    // class= "coding_border__67f3C p-3 d-flex align-items-center justify-content-between gap-5"
-    const diffHints = document.getElementsByClassName(
-      "coding_border__67f3C p-3 d-flex align-items-center justify-content-between gap-5"
-    );
-
-    for (let i = 0; i < diffHints.length; i++) {
-      diffHints[i].click();
-      hints += diffHints[i].textContent + "\n";
-      await delay(1000);
-      const hintsEl = document.getElementsByClassName(
-        "fs-6 problem_paragraph mx-3"
-      )[0];
-      console.log(hintsEl);
-
-      hints += hintsEl.textContent + "\n";
-      diffHints[i].click();
-    }
-    console.log("Hints: ", hints);
-
-    const desc = document.getElementsByClassName(
-      "coding_nav_bg__HRkIn p-2 nav nav-pills w-100"
-    )[0].firstElementChild.children[0];
-
-    if (desc) {
-      desc.click();
-    }
-  }
-
-  document.body.removeChild(loader);
 }
 
 function addAiChatBox() {
@@ -284,6 +238,42 @@ function addAiChatBox() {
   document.getElementById("sendChat").addEventListener("click", () => {
     handleSendMessages();
   });
+}
+function fecthAllFromProblemDetails(details) {
+  const data = details.data;
+
+  let formattedHints = "Hints:\n";
+  if (data.hints.hint1) {
+    formattedHints += `1. ${data.hints.hint1.replace(
+      /\*\*(.*?)\*\*/g,
+      "<b>$1</b>"
+    )}\n`;
+  }
+  if (data.hints.hint2 && data.hints.hint2.trim() !== "") {
+    formattedHints += `2. ${data.hints.hint2.replace(
+      /\*\*(.*?)\*\*/g,
+      "<b>$1</b>"
+    )}\n`;
+  } else {
+    formattedHints += "2. No additional hints available.\n";
+  }
+
+  const solutionApproach =
+    data.hints.solution_approach || "No solution approach provided.";
+  const formattedSolutionApproach = `Solution Approach:\n${solutionApproach
+    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+    .replace(/\\[a-z]+|(\$\$?)/g, "")
+    .replace(/\n/g, " ")}\n`;
+
+  const editorialCode = data.editorial_code && data.editorial_code[0];
+  const codeLanguage = editorialCode?.language || "Unknown language";
+  const code = editorialCode?.code || "No code available.";
+  const formattedCode = `Editorial Code (${codeLanguage}):\n${code
+    .replace(/```[a-zA-Z]*\n/g, "")
+    .replace(/```/g, "")
+    .trim()}\n`;
+
+  return `${formattedHints}\n${formattedSolutionApproach}\n${formattedCode}`;
 }
 
 async function handleSendMessages() {
@@ -418,6 +408,7 @@ function formatResponse(response) {
       "<pre><code>$1</code></pre>"
     );
   }
+
   formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
   formatted = formatted.replace(/\n/g, "<br>");
 
