@@ -1,6 +1,7 @@
 let GEMINI_API_KEY = null;
 let currentUrl = "";
 let hints = "";
+const clearIconUrl = chrome.runtime.getURL("assets/clearConversation.png");
 
 chrome.storage.local.get("geminiApiKey", (result) => {
   if (result.geminiApiKey) {
@@ -23,6 +24,8 @@ function onUrlChange(newUrl) {
   }
 
   if (newUrl.includes("/problems/") && newUrl.length > "/problems/".length) {
+    console.log("New URL:", newUrl);
+
     injectScript();
 
     const LineToRemove = document.getElementsByClassName(
@@ -55,6 +58,12 @@ function getLastIdFromUrl(url) {
   return match ? match[1] : null;
 }
 
+function injectScript() {
+  const script = document.createElement("script");
+  script.src = chrome.runtime.getURL("inject.js");
+  document.documentElement.appendChild(script);
+}
+
 window.addEventListener("xhrDataFetched", (event) => {
   const data = event.detail;
 
@@ -69,6 +78,7 @@ window.addEventListener("xhrDataFetched", (event) => {
 
       if (id === getLastIdFromUrl(window.location.href)) {
         const parsedData = JSON.parse(data.response);
+
         hints = fecthAllFromProblemDetails(parsedData);
       }
     }
@@ -158,23 +168,30 @@ function addAiChatBox() {
   chatbox.style.overflow = "auto";
 
   chatbox.innerHTML = `
-    <div style="padding: 10px; background: #005c83; color: white; font-weight: bold; border-radius: 10px 10px 0 0; class: chatBoxHeading">
-      AI Chatbox
-      <span style="float: right; cursor: pointer;" id="closeChatbox">X</span>
+  <div style="padding: 10px; background: #005c83; color: white; font-weight: bold; border-radius: 10px 10px 0 0; class: chatBoxHeading">
+    AI Chatbox
+    <span style="float: right; display: flex; align-items: center;">
+      <span style="cursor: pointer; margin-right: 10px;" id="clearConversation">
+        <img src="${clearIconUrl}" style="width: 20px; height: 20px;" alt="Clear Conversation" />
+      </span>
+      <span style="cursor: pointer;" id="closeChatbox">X</span>
+    </span>
+  </div>
+  <div id="chatMessages" style="flex-grow: 1; overflow-y: auto; padding: 10px; background-color: #f4f4f4;"></div>
+  <div style="padding: 10px; background: #005c83; border-top: 1px solid #ccc;">
+    <div style="display: flex;">
+      <input type="text" id="chatInput" placeholder="Ask your Doubt" style="flex: 1; padding: 5px; border: 1px solid #005c83; border-radius: 5px;">
+      <button id="sendChat" style="margin-left: 5px; padding: 5px 10px; background: #4d5d6f; color: white; border: none; border-radius: 5px;">Send</button>
     </div>
-    <div id="chatMessages" style="flex-grow: 1; overflow-y: auto; padding: 10px; background-color: #f4f4f4;"></div>
-    <div style="padding: 10px; background: #005c83; border-top: 1px solid #ccc;">
-      <div style="display: flex;">
-        <input type="text" id="chatInput" placeholder="Ask your Doubt" style="flex: 1; padding: 5px; border: 1px solid #005c83; border-radius: 5px;">
-        <button id="sendChat" style="margin-left: 5px; padding: 5px 10px; background: #4d5d6f; color: white; border: none; border-radius: 5px;">Send</button>
-      </div>
-    </div>
-  `;
+  </div>
+`;
 
   document.body.appendChild(chatbox);
 
   let uniqueId = window.location.pathname.split("/")[2];
   restorePrevChats(uniqueId);
+
+  clearConversation();
 
   document.getElementById("closeChatbox").addEventListener("click", () => {
     chatbox.style.display = "none";
@@ -185,17 +202,33 @@ function addAiChatBox() {
     handleSendMessages();
   });
 }
+function clearConversation() {
+  document.getElementById("clearConversation").addEventListener("click", () => {
+    let uniqueId = window.location.pathname.split("/")[2];
 
-function injectScript() {
-  const script = document.createElement("script");
-  script.src = chrome.runtime.getURL("inject.js");
-  document.documentElement.appendChild(script);
+    chrome.runtime.sendMessage(
+      { type: "clearConversation", uniqueId },
+      (response) => {
+        if (response && response.success) {
+          document.getElementById("chatMessages").innerHTML = "";
+          console.log("Conversation cleared successfully!");
+        } else {
+          console.error("Failed to clear conversation:", response.error);
+        }
+      }
+    );
+  });
 }
 
 function fetchCodeFromLocalStorage(problemId) {
-  const key = `course_25459_${problemId}_C++14`;
-  const code = localStorage.getItem(key);
-  return code ? code : "No code found for the specified problem ID.";
+  const searchKeySuffix = `${problemId}_C++14`;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.endsWith(searchKeySuffix)) {
+      return localStorage.getItem(key);
+    }
+  }
+  return "No code found for the specified problem ID.";
 }
 
 function markdownToPlainText(markdownText) {
@@ -269,6 +302,7 @@ async function handleSendMessages() {
   const pid = getLastIdFromUrl(window.location.href);
   const myCode = fetchCodeFromLocalStorage(pid);
   const myCodeFormatted = markdownToPlainText(myCode);
+  // console.log(myCodeFormatted);
 
   const chatInput = document.getElementById("chatInput");
   const chatMessages = document.getElementById("chatMessages");
@@ -294,6 +328,7 @@ async function handleSendMessages() {
     try {
       chrome.storage.local.get([uniqueId], async (storedChats) => {
         const previousChats = storedChats[uniqueId] || [];
+        // console.log(storedChats[uniqueId]);
 
         let str =
           "These are the previous conversations. Retain them in your memory so that the user doesn't have to repeat the context each time, and ensure your responses reflect that you are aware of all prior interactions. Below, I'll provide the problem description.\n";

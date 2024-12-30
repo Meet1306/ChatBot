@@ -14,7 +14,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             error: chrome.runtime.lastError.message,
           });
         } else {
-
           sendResponse({ success: true });
         }
       });
@@ -28,5 +27,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: true, chats });
     });
     return true;
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  const { type, uniqueId } = message;
+
+  if (type === "clearConversation") {
+    chrome.storage.local.get(uniqueId, (result) => {
+      if (!result[uniqueId]) {
+        sendResponse({
+          success: false,
+          error: `No conversation found for uniqueId: ${uniqueId}`,
+        });
+      } else {
+        chrome.storage.local.remove(uniqueId, () => {
+          if (chrome.runtime.lastError) {
+            sendResponse({
+              success: false,
+              error: chrome.runtime.lastError.message,
+            });
+          } else {
+            sendResponse({ success: true });
+          }
+        });
+      }
+    });
+    return true; // Keep the message channel open for async response
   }
 });

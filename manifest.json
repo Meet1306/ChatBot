@@ -17,7 +17,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["inject.js"],
+      "resources": ["inject.js", "assets/clearConversation.png"],
       "matches": ["<all_urls>"]
     }
   ],
