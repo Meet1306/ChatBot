@@ -202,6 +202,7 @@ function addAiChatBox() {
     handleSendMessages();
   });
 }
+
 function clearConversation() {
   document.getElementById("clearConversation").addEventListener("click", () => {
     let uniqueId = window.location.pathname.split("/")[2];

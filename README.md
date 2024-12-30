@@ -1,41 +1,75 @@
-# Chrome-Extension-Base-Template
-This is a basic Chrome Extension base template for starting new projects off of initialized with a MIT license.
+# AZ AI Chatbox Extension
 
-## Features
-- ..
-- ..
-- ..
+A Chrome Extension that integrates AI chat functionality to help users with coding problems on Algozenith platform(maang.in). It injects a chatbox into the page that provides hints and guidance based on the current problem being viewed.
 
 ## Author
-First Last
-- [Author Website]()
-- [Author Github]()
-- [Project Repository]()
 
-## Requirements
+Meet Patel
+
+- [https://github.com/Meet1306](#)
+- [https://github.com/Meet1306/ChatBot](#)
+
+## Features
+
+- **AI-powered chatbox**: Ask questions and receive AI-generated hints.
+- **Responsive**: The chatbox is fixed at the bottom-right corner for easy access.
+- **Real-time integration**: The chatbox activates on the problem page and dynamically provides support.
+- **Problem detection**: Automatically detects when a problem page is loaded.
+- **Question-only input**: The chatbox only accepts questions related to the current coding problem, ensuring a focused support experience.
+- **Hint and solution fetching**: Retrieves relevant hints and solutions related to the detected problem.
+- **Store conversation**: Stores the conversation history locally, enabling users to review previous interactions.
+- **Restore conversation**: Restores the previous conversation when the extension is reopened, allowing users to continue where they left off.
+- **Clear conversation**: Allows clearing the chat history.
+
+### For Developers
+
+1. Clone this repository or download it as a ZIP.
+2. Extract the files if downloaded as a ZIP.
+3. Open Google Chrome.
+4. Type `chrome://extensions/` in the address bar and press Enter.
+5. Enable **Developer mode** in the top right corner of the extensions page.
+6. Click the **Load unpacked** button and select the folder where you extracted the extension files.
+7. The extension is now installed and ready to use.
+
 ### Knowledge
+
 - HTML
 - CSS
-- Javascript
+- JavaScript
 - Chrome API
+
 ### Tools
+
 - Google Chrome Browser
-- IDE or Text Editor of Your Choice
+- IDE or text editor of your choice
 
-## Setup Instructions
-### For Developers
-1. Make a clone of this project, unzipped.
-2. Open Chrome Browser
-3. In a new or blank tab, type in "chrome://extensions/" (without the quotes of course) and click [Enter].
-4. At the top right corner of the page, **enable** "Developer Mode"
-5. Click the button on the page that says "Load Unpacked"
-6. Navigate to your unzipped project folder and select that and hit OK.
-7. You are now ready to start working on the extension! Just make sure you reload after each change you make to see the changes take place.
+## How It Works
 
-### For End Users
-1. ...
-2. ...
-3. ...
+The extension detects when the user navigates to a problem page. Upon detection, it:
+
+2. Displays a button labeled **AI** at the top of the page.
+3. When clicked, this button opens a chatbox that allows users to interact with the AI for hints and assistance.
+
+## Contribution
+
+Feel free to contribute! Fork the project and make your improvements. Please follow the steps below for contributing:
+
+1. Fork the repository.
+2. Create a feature branch.
+3. Commit your changes.
+4. Push to your branch.
+5. Open a Pull Request.
 
 ## License
-Please refer to LICENSE file.
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgements
+
+- Thanks to **AlgoZenith Platform** for providing the opportunity to participate in the hackathon and showcasing our project.
+- The extension uses the **Gemini API** for AI-powered chat functionality.
+- Special thanks to the Chrome Extensions API for enabling seamless integration with the browser.
+
+---
+
+If you encounter any issues, feel free to open an issue on the repository, and we’ll be happy to help!
