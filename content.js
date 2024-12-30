@@ -43,19 +43,11 @@ const observer = new MutationObserver(() => {
   const newUrl = window.location.href;
   if (newUrl !== currentUrl) {
     currentUrl = newUrl;
-    // fetchProblemDetailsViaApi();
     onUrlChange(newUrl);
   }
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
-
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-  return null;
-}
 
 function getLastIdFromUrl(url) {
   const match = url.match(/-(\d+)(?=\?)/);
@@ -63,73 +55,25 @@ function getLastIdFromUrl(url) {
   return match ? match[1] : null;
 }
 
-let problemDetails = null;
+window.addEventListener("xhrDataFetched", (event) => {
+  const data = event.detail;
 
-// async function fetchProblemDetailsViaApi() {
-//   let accessToken = getCookie("access_token");
-//   console.log("Acess Token", accessToken);
+  if (
+    data.url &&
+    data.url.match(/https:\/\/api2\.maang\.in\/problems\/user\/\d+/)
+  ) {
+    const idMatch = data.url.match(/\/(\d+)$/);
 
-//   if (!accessToken) {
-//     console.log("Access token not found in cookies");
-//     return null;
-//   }
+    if (idMatch) {
+      const id = idMatch[1];
 
-//   const ProbId = getLastIdFromUrl(window.location.href);
-
-//   const apiUrl = `https://api2.maang.in/problems/user/${ProbId}`;
-
-//   try {
-//     let response = await fetch(apiUrl, {
-//       method: "GET",
-//       headers: {
-//         Authorization: `Bearer ${accessToken}`,
-//         "Content-Type": "application/json",
-//       },
-//     });
-
-//     if (!response.ok) {
-//       console.log(response.status);
-
-//       if (response.status === 401) {
-//         console.log("Access token expired. Fetching a new token...");
-
-//         accessToken = getCookie("access_token");
-
-//         if (accessToken) {
-//           console.log("Retrying the API call with the new access token...");
-
-//           response = await fetch(apiUrl, {
-//             method: "GET",
-//             headers: {
-//               Authorization: `Bearer ${accessToken}`,
-//               "Content-Type": "application/json",
-//             },
-//           });
-
-//           if (!response.ok) {
-//             console.log(
-//               "Failed to fetch data even after refreshing the token."
-//             );
-//             return null;
-//           }
-//         } else {
-//           console.log("Failed to refresh the access token.");
-//           return null;
-//         }
-//       } else {
-//         console.log("Authorization failed or invalid token.");
-//         return null;
-//       }
-//     }
-
-//     const data = await response.json();
-//     console.log("Data:", data);
-//     hints = fecthAllFromProblemDetails(data);
-//     console.log("HInts", hints);
-//   } catch (error) {
-//     console.log("Error:", error);
-//   }
-// }
+      if (id === getLastIdFromUrl(window.location.href)) {
+        const parsedData = JSON.parse(data.response);
+        hints = fecthAllFromProblemDetails(parsedData);
+      }
+    }
+  }
+});
 
 function addAiHelpButton() {
   const adjEl = document.getElementsByClassName(
@@ -247,26 +191,6 @@ function injectScript() {
   script.src = chrome.runtime.getURL("inject.js");
   document.documentElement.appendChild(script);
 }
-
-window.addEventListener("xhrDataFetched", (event) => {
-  const data = event.detail;
-
-  if (
-    data.url &&
-    data.url.match(/https:\/\/api2\.maang\.in\/problems\/user\/\d+/)
-  ) {
-    const idMatch = data.url.match(/\/(\d+)$/);
-
-    if (idMatch) {
-      const id = idMatch[1];
-
-      if (id === getLastIdFromUrl(window.location.href)) {
-        const parsedData = JSON.parse(data.response);
-        hints = fecthAllFromProblemDetails(parsedData);
-      }
-    }
-  }
-});
 
 function fecthAllFromProblemDetails(details) {
   data = details.data;
@@ -423,7 +347,7 @@ function fetchProblemDescription() {
 
 function formatProblemDescription(text) {
   let cleanedText = text.replace(/\\n/g, "\n");
-  cleanedText = cleanedText.replace(/\\textbf{[^}]+}/g, ""); // Remove LaTeX commands like \textbf
+  cleanedText = cleanedText.replace(/\\textbf{[^}]+}/g, "");
 
   cleanedText = cleanedText.replace(/\s+/g, " ").trim();
 
