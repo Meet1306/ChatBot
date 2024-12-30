@@ -329,7 +329,6 @@ async function handleSendMessages() {
     try {
       chrome.storage.local.get([uniqueId], async (storedChats) => {
         const previousChats = storedChats[uniqueId] || [];
-        // console.log(storedChats[uniqueId]);
 
         let str =
           "These are the previous conversations. Retain them in your memory so that the user doesn't have to repeat the context each time, and ensure your responses reflect that you are aware of all prior interactions. Below, I'll provide the problem description.\n";
@@ -338,10 +337,10 @@ async function handleSendMessages() {
           "The problem description above is the context you need to keep in memory for the problem related questions only\n";
 
         let hintDesc =
-          'Ensure that you always retain the problem description, hints, solution approaches, and codes provided, as these are crucial for responding accurately to the user\'s queries. Your responses should always reflect the context from previous interactions, and you should never ask the user to repeat information already given. If the user asks a question unrelated to the problem, immediately inform them that their query is irrelevant to the current issue and avoid responding to it. When providing help, avoid unnecessary introductory phrases like “Okay, I understand” or “Got it.” Always respond directly to the user\'s question while keeping the relevant problem context in mind. If the user asks for a solution, first offer hints to guide them toward a self-solved answer, encouraging them to try the problem independently. Only share the full solution if they explicitly ask for it, and always provide an explanation of the logic and steps behind the solution, ensuring the user understands the reasoning. Maintain an interactive and educational approach, focusing on helping the user learn. Do not offer hints unless they request the full solution, and if they insist, give them the code but explain the thought process behind it. Throughout the conversation, keep everything centered around the problem and avoid deviating from it. While you can acknowledge greetings like "Hello" or "Hi," ensure that the conversation stays focused on the problem description without straying into unrelated topics.. \n';
+          'Ensure that you always retain the problem description, hints, solution approaches, and codes provided, as these are crucial for responding accurately to the user\'s queries. Your responses should always reflect the context from previous interactions, and you should never ask the user to repeat information already given. If the user asks a question unrelated to the problem, immediately inform them that their query is irrelevant to the current issue and avoid responding to it. When providing help, avoid unnecessary introductory phrases like “Okay, I understand” or “Got it.” Always respond directly to the user\'s question while keeping the relevant problem context in mind. If the user asks for a solution, first offer hints to guide them toward a self-solved answer, encouraging them to try the problem independently. Only share the full solution if they explicitly ask for it, and always provide an explanation of the logic and steps behind the solution, ensuring the user understands the reasoning. Maintain an interactive and educational approach, focusing on helping the user learn. Do not offer hints unless they request the full solution, and if they insist, give them the code but explain the thought process behind it. Throughout the conversation, keep everything centered around the problem and avoid deviating from it. While you can acknowledge greetings like "Hello" or "Hi," ensure that the conversation stays focused on the problem description without straying into unrelated topics.\n';
 
         let codeStr =
-          "This is my own written code for your context so that you can help me to identify where i have done mistakes ";
+          'When the user asks for debugging help, you will refer to the code they have written in their editor. You will avoid directly mentioning that You have access to the user\'s provided code, and instead focus on offering solutions based on what\'s visible in the editor. If there are any issues or areas that can be improved, You should point them out without explicitly stating "Provided Code." instead you should state "code that you have written in the editor". You should present potential fixes or suggestions for improving the code based on the user\'s query. The goal is to assist the user without revealing that you have access to additional hints or solutions for the problem. That is just provided for your understanding and help the user to make them understand in a simple approach.\n';
 
         previousChats.push(`${str}`);
 
@@ -393,7 +392,16 @@ async function handleSendMessages() {
           aiMessage.style.border = "1px solid #ccc";
           if (chatMessages) chatMessages.appendChild(aiMessage);
         } else {
-          console.log("Failed to fetch AI response.");
+          const errorMessage = document.createElement("div");
+          errorMessage.textContent =
+            "AI: Sorry, something went wrong. Set the Correct API Key.";
+          errorMessage.style.margin = "5px 0";
+          errorMessage.style.padding = "5px";
+          errorMessage.style.backgroundColor = "#ffebee";
+          errorMessage.style.borderRadius = "5px";
+          errorMessage.style.whiteSpace = "pre-wrap";
+          errorMessage.style.border = "1px solid #ccc";
+          if (chatMessages) chatMessages.appendChild(errorMessage);
         }
       });
     } catch (error) {
