@@ -192,6 +192,40 @@ function injectScript() {
   document.documentElement.appendChild(script);
 }
 
+function fetchCodeFromLocalStorage(problemId) {
+  const key = `course_25459_${problemId}_C++14`;
+  const code = localStorage.getItem(key);
+  return code ? code : "No code found for the specified problem ID.";
+}
+
+function markdownToPlainText(markdownText) {
+  markdownText = markdownText.replace(/\r/g, "");
+
+  markdownText = markdownText.replace(/```[\s\S]*?```/g, "");
+
+  markdownText = markdownText.replace(/`[^`]*`/g, "");
+
+  markdownText = markdownText.replace(/^#{1,6}\s?/gm, "");
+
+  markdownText = markdownText.replace(/^\s*[-*+]\s/gm, "");
+
+  markdownText = markdownText.replace(/!\[.*?\]\(.*?\)/g, "");
+
+  markdownText = markdownText.replace(/\[.*?\]\((.*?)\)/g, "$1");
+
+  markdownText = markdownText.replace(/^[-*]{3,}/gm, "\n");
+
+  markdownText = markdownText.replace(/^\s*>+\s?/gm, "");
+
+  markdownText = markdownText.replace(/\*\*|__|\*|_/g, "");
+
+  markdownText = markdownText.replace(/\s+/g, " ").trim();
+
+  markdownText = markdownText.replace(/\\n/g, "\n");
+
+  return markdownText;
+}
+
 function fecthAllFromProblemDetails(details) {
   data = details.data;
 
@@ -232,6 +266,10 @@ function fecthAllFromProblemDetails(details) {
 async function handleSendMessages() {
   const probDesc = fetchProblemDescription();
 
+  const pid = getLastIdFromUrl(window.location.href);
+  const myCode = fetchCodeFromLocalStorage(pid);
+  const myCodeFormatted = markdownToPlainText(myCode);
+
   const chatInput = document.getElementById("chatInput");
   const chatMessages = document.getElementById("chatMessages");
 
@@ -266,10 +304,16 @@ async function handleSendMessages() {
         let hintDesc =
           'Ensure that you always retain the problem description, hints, solution approaches, and codes provided, as these are crucial for responding accurately to the user\'s queries. Your responses should always reflect the context from previous interactions, and you should never ask the user to repeat information already given. If the user asks a question unrelated to the problem, immediately inform them that their query is irrelevant to the current issue and avoid responding to it. When providing help, avoid unnecessary introductory phrases like “Okay, I understand” or “Got it.” Always respond directly to the user\'s question while keeping the relevant problem context in mind. If the user asks for a solution, first offer hints to guide them toward a self-solved answer, encouraging them to try the problem independently. Only share the full solution if they explicitly ask for it, and always provide an explanation of the logic and steps behind the solution, ensuring the user understands the reasoning. Maintain an interactive and educational approach, focusing on helping the user learn. Do not offer hints unless they request the full solution, and if they insist, give them the code but explain the thought process behind it. Throughout the conversation, keep everything centered around the problem and avoid deviating from it. While you can acknowledge greetings like "Hello" or "Hi," ensure that the conversation stays focused on the problem description without straying into unrelated topics.. \n';
 
+        let codeStr =
+          "This is my own written code for your context so that you can help me to identify where i have done mistakes ";
+
         previousChats.push(`${str}`);
 
         previousChats.push(`${probDesc}`);
         previousChats.push(`${probDescStr}`);
+
+        previousChats.push(`${myCodeFormatted}`);
+        previousChats.push(`${codeStr}`);
 
         previousChats.push(`${hints}`);
         previousChats.push(`${hintDesc}`);
