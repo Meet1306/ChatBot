@@ -20,6 +20,7 @@ Meet Patel
 - **Store conversation**: Stores the conversation history locally, enabling users to review previous interactions.
 - **Restore conversation**: Restores the previous conversation when the extension is reopened, allowing users to continue where they left off.
 - **Clear conversation**: Allows clearing the chat history.
+- **Code fetching**: Automatically fetches the code written by the user in the editor and provides it to the AI. This enables the AI to analyze the code and suggest corrections or improvements without requiring the user to copy and paste the code.
 
 ### For Developers
 
