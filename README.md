@@ -1,6 +1,6 @@
 # AZ AI Chatbox Extension
 
-A Chrome Extension that integrates AI chat functionality to help users with coding problems on Algozenith platform(maang.in). It injects a chatbox into the page that provides hints and guidance based on the current problem being viewed.
+A Chrome Extension that integrates AI chat functionality to help users with coding problems on Algozenith platform(maang.in). It injects a chatbox into the problem's page of the website that provides hints and guidance based on the current problem being viewed.
 
 ## Author
 
@@ -17,10 +17,10 @@ Meet Patel
 - **Problem detection**: Automatically detects when a problem page is loaded.
 - **Question-only input**: The chatbox only accepts questions related to the current coding problem, ensuring a focused support experience.
 - **Hint and solution fetching**: Retrieves relevant hints and solutions related to the detected problem.
-- **Store conversation**: Stores the conversation history locally, enabling users to review previous interactions.
+- **Code fetching**: Automatically fetches the code written by the user in the editor and provides it to the AI. This enables the AI to analyze the code and suggest corrections or improvements without requiring the user to copy and paste the code.
+- **Store conversation**: Stores the conversation history between the user and the AI locally.
 - **Restore conversation**: Restores the previous conversation when the extension is reopened, allowing users to continue where they left off.
 - **Clear conversation**: Allows clearing the chat history.
-- **Code fetching**: Automatically fetches the code written by the user in the editor and provides it to the AI. This enables the AI to analyze the code and suggest corrections or improvements without requiring the user to copy and paste the code.
 
 ### For Developers
 
@@ -42,7 +42,7 @@ Meet Patel
 ### Tools
 
 - Google Chrome Browser
-- IDE or text editor of your choice
+- Visual Studio Code (VSCode)
 
 ## How It Works
 
