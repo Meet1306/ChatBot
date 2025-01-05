@@ -15,9 +15,9 @@ Meet Patel
 - **Responsive**: The chatbox is fixed at the bottom-right corner for easy access.
 - **Real-time integration**: The chatbox activates on the problem page and dynamically provides support.
 - **Problem detection**: Automatically detects when a problem page is loaded.
-- **Question-only input**: The chatbox only accepts questions related to the current coding problem, ensuring a focused support experience.
 - **Hint and solution fetching**: Retrieves relevant hints and solutions related to the detected problem.
 - **Code fetching**: Automatically fetches the code written by the user in the editor and provides it to the AI. This enables the AI to analyze the code and suggest corrections or improvements without requiring the user to copy and paste the code.
+- **Question-only input**: The chatbox only accepts questions related to the current coding problem, ensuring a focused support experience.
 - **Store conversation**: Stores the conversation history between the user and the AI locally.
 - **Restore conversation**: Restores the previous conversation when the extension is reopened, allowing users to continue where they left off.
 - **Clear conversation**: Allows clearing the chat history.
