@@ -1,4 +1,4 @@
-# AZ AI Chatbox Extension
+# AZ AI Chatbot Chrome Extension
 
 A Chrome Extension that integrates AI chat functionality to help users with coding problems on Algozenith platform(maang.in). It injects a chatbox into the problem's page of the website that provides hints and guidance based on the current problem being viewed.
 
@@ -9,15 +9,22 @@ Meet Patel
 - [https://github.com/Meet1306](#)
 - [https://github.com/Meet1306/ChatBot](#)
 
+## How It Works
+
+The extension detects when the user navigates to a problem page. Upon detection, it:
+
+2. Displays a button labeled **AI** at the top of the page.
+3. When clicked, this button opens a chatbox that allows users to interact with the AI for hints and assistance.
+
 ## Features
 
 - **AI-powered chatbox**: Ask questions and receive AI-generated hints.
 - **Responsive**: The chatbox is fixed at the bottom-right corner for easy access.
 - **Real-time integration**: The chatbox activates on the problem page and dynamically provides support.
 - **Problem detection**: Automatically detects when a problem page is loaded.
+- **Question-only input**: The AI only accepts questions related to the current coding problem, ensuring a focused support experience.
 - **Hint and solution fetching**: Retrieves relevant hints and solutions related to the detected problem.
 - **Code fetching**: Automatically fetches the code written by the user in the editor and provides it to the AI. This enables the AI to analyze the code and suggest corrections or improvements without requiring the user to copy and paste the code.
-- **Question-only input**: The chatbox only accepts questions related to the current coding problem, ensuring a focused support experience.
 - **Store conversation**: Stores the conversation history between the user and the AI locally.
 - **Restore conversation**: Restores the previous conversation when the extension is reopened, allowing users to continue where they left off.
 - **Clear conversation**: Allows clearing the chat history.
@@ -43,13 +50,6 @@ Meet Patel
 
 - Google Chrome Browser
 - Visual Studio Code (VSCode)
-
-## How It Works
-
-The extension detects when the user navigates to a problem page. Upon detection, it:
-
-2. Displays a button labeled **AI** at the top of the page.
-3. When clicked, this button opens a chatbox that allows users to interact with the AI for hints and assistance.
 
 ## Contribution
 
