@@ -214,7 +214,7 @@ function clearConversation() {
           document.getElementById("chatMessages").innerHTML = "";
           console.log("Conversation cleared successfully!");
         } else {
-          console.error("Failed to clear conversation:", response.error);
+          console.log("Failed to clear conversation:", response.error);
         }
       }
     );
