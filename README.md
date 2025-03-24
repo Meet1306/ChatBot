@@ -1,6 +1,6 @@
-# AZ AI Chatbot Chrome Extension
+# AI-Powered Coding Assistant Chrome Extension
 
-A Chrome Extension that integrates AI chat functionality to help users with coding problems on Algozenith platform(maang.in). It injects a chatbox into the problem's page of the website that provides hints and guidance based on the current problem being viewed.
+A Chrome Extension that integrates AI chat functionality to help users with coding problems. It injects a chatbox into the problem's page of the website that provides hints and guidance based on the current problem being viewed.
 
 ## Author
 
@@ -64,12 +64,6 @@ Feel free to contribute! Fork the project and make your improvements. Please fol
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgements
-
-- Thanks to **AlgoZenith Platform** for providing the opportunity to participate in the hackathon and showcasing our project.
-- The extension uses the **Gemini API** for AI-powered chat functionality.
-- Special thanks to the Chrome Extensions API for enabling seamless integration with the browser.
 
 ---
 
